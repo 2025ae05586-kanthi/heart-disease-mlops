@@ -1,0 +1,33 @@
+.venv/
+**pycache**/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.env
+mlruns/
+*.log
+
+# Ignore model artifacts by default, but include the required trained model.
+
+artifacts/*.joblib
+artifacts/*.pkl
+!artifacts/heart_disease_model.joblib
+!artifacts/.gitkeep
+
+# Exclude raw data, but include the cleaned dataset deliverable.
+
+data/raw/*
+!data/raw/.gitkeep
+
+data/processed/*
+!data/processed/.gitkeep
+!data/processed/heart_disease.csv
+
+# Keep generated report figures and project outputs.
+
+!reports/figures/.gitkeep
+
+build/
+dist/
+*.egg-info/

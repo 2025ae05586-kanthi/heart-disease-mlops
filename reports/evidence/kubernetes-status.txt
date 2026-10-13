@@ -1,9 +1,9 @@
 NAME                                READY   UP-TO-DATE   AVAILABLE   AGE
-deployment.apps/heart-disease-api   1/1     1            1           18m
+deployment.apps/heart-disease-api   1/1     1            1           60m
 
 NAME                                     READY   STATUS    RESTARTS   AGE
-pod/heart-disease-api-6dcb799bc7-ndw4c   1/1     Running   0          18m
+pod/heart-disease-api-6dcb799bc7-ndw4c   1/1     Running   0          60m
 
 NAME                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
-service/heart-disease-api   NodePort    10.108.234.158   <none>        8000:30080/TCP   17m
-service/kubernetes          ClusterIP   10.96.0.1        <none>        443/TCP          27m
+service/heart-disease-api   NodePort    10.108.234.158   <none>        8000:30080/TCP   59m
+service/kubernetes          ClusterIP   10.96.0.1        <none>        443/TCP          69m

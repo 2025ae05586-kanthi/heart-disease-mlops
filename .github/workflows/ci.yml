@@ -1,4 +1,3 @@
-
 name: Heart Disease MLOps CI
 
 on:
@@ -8,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  test-and-build:
+  test-train-and-build:
     runs-on: ubuntu-latest
 
     steps:
@@ -27,10 +26,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Run Ruff linting
+        run: |
+          python -m ruff check src tests
+
       - name: Run automated tests
         run: |
           python -m pytest tests -v
 
+      - name: Train and evaluate models
+        run: |
+          python -m src.heart_ml.train
+
       - name: Build Docker image
         run: |
           docker build -t heart-disease-api:ci .
+
+      - name: Upload training and test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: heart-disease-ci-artifacts
+          if-no-files-found: warn
+          path: |
+            reports/model_results.json
+            reports/figures/*.png
+            artifacts/heart_disease_model.joblib
+            .pytest_cache/

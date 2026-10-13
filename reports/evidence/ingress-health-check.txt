@@ -1,0 +1,8 @@
+Command:
+curl -i --resolve heart-disease.local:80:192.168.49.2 http://heart-disease.local/health
+
+Result:
+HTTP/1.1 200 OK
+
+Response:
+{"status":"healthy","model_loaded":true}

@@ -1,0 +1,2 @@
+NAME                        CLASS   HOSTS                 ADDRESS        PORTS   AGE
+heart-disease-api-ingress   nginx   heart-disease.local   192.168.49.2   80      2m41s

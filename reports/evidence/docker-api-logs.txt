@@ -1,0 +1,4 @@
+INFO:     172.17.0.1:58618 - "GET /health HTTP/1.1" 200 OK
+INFO:     172.17.0.1:48744 - "POST /predict HTTP/1.1" 422 Unprocessable Entity
+INFO:     172.17.0.1:38284 - "POST /predict HTTP/1.1" 200 OK
+INFO:     172.17.0.1:32786 - "GET /health HTTP/1.1" 200 OK

@@ -6,7 +6,6 @@ import matplotlib
 matplotlib.use("Agg")
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import seaborn as sns
 
 from src.heart_ml.data import prepare_dataset

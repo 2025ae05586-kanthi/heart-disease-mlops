@@ -428,10 +428,10 @@ Evidence files include:
 
 **Important deployment limitation:** The Ingress was verified within the VM/Minikube environment. This does not establish public internet accessibility, and no public API URL is claimed.
 
-Recommended additional screenshots:
+Screenshots:
 
-- `screenshots/04_kubernetes_resources.png`
-- `screenshots/05_ingress_health_check.png`
+- `screenshots/05_kubernetes_resources.png`
+- `screenshots/06_ingress_health_check.png`
 
 Only retain the Markdown image references above after confirming the corresponding screenshot files exist and have been committed. If your actual filenames differ, update the paths accordingly.
 
@@ -476,6 +476,245 @@ The repository contains the application source code, tests, CI workflow, Docker 
 | Screenshots | `screenshots/` |
 
 Evaluators can clone the repository, follow the setup instructions, inspect the training and prediction code, run the tests, review the CI/CD workflow, and examine the deployment evidence.
+
+---
+
+## 7. Kubernetes Deployment and NGINX Ingress
+
+This project can be deployed locally to Kubernetes using Minikube. The Kubernetes Deployment manages the API pod, a NodePort Service exposes it, and an NGINX Ingress routes HTTP requests to the Service.
+
+### 7.1 Prerequisites
+
+Install and verify the following tools on the Linux VM:
+
+- Docker
+- Minikube
+- `kubectl` (or use `minikube kubectl --`)
+- Git
+
+Check the installed versions:
+
+```bash
+docker --version
+minikube version
+minikube kubectl -- get nodes
+```
+
+### 7.2 Start the Minikube cluster
+
+Start Minikube using the Docker driver:
+
+```bash
+minikube start --driver=docker --cpus=2 --memory=4096
+```
+
+Verify that the cluster is running and the node is ready:
+
+```bash
+minikube status
+minikube kubectl -- get nodes
+```
+
+The node status should be `Ready`.
+
+### 7.3 Build and load the Docker image
+
+From the project root directory, build the API image:
+
+```bash
+docker build -t heart-disease-api:1.0 .
+```
+
+Load the image into Minikube so that Kubernetes can use the locally built image without pulling it from a registry:
+
+```bash
+minikube image load heart-disease-api:1.0
+```
+
+### 7.4 Deploy the application to Kubernetes
+
+Apply the Deployment and Service manifests:
+
+```bash
+minikube kubectl -- apply -f deployment/kubernetes/deployment.yaml
+minikube kubectl -- apply -f deployment/kubernetes/service.yaml
+```
+
+Check the Deployment, pods, and Service:
+
+```bash
+minikube kubectl -- get deployments
+minikube kubectl -- get pods -o wide
+minikube kubectl -- get services
+```
+
+Wait for the Deployment to become available:
+
+```bash
+minikube kubectl -- rollout status deployment/heart-disease-api
+```
+
+Expected result: the Deployment becomes available and its pod reaches `Running` with `1/1` containers ready.
+
+### 7.5 Test the API through Kubernetes
+
+The Service is configured as a NodePort Service on port `30080`. Start a local port-forward:
+
+```bash
+minikube kubectl -- port-forward service/heart-disease-api 8001:8000
+```
+
+Keep this terminal open. In a second terminal, test the health endpoint:
+
+```bash
+curl http://127.0.0.1:8001/health
+```
+
+Expected response:
+
+```json
+{
+  "status": "healthy",
+  "model_loaded": true
+}
+```
+
+Open the API documentation in a browser if the port-forward is active:
+
+```text
+http://127.0.0.1:8001/docs
+```
+
+### 7.6 Enable the NGINX Ingress controller
+
+Enable the Minikube Ingress addon:
+
+```bash
+minikube addons enable ingress
+```
+
+Check that the Ingress controller is running:
+
+```bash
+minikube kubectl -- get pods -n ingress-nginx
+minikube kubectl -- get ingressclass
+```
+
+Wait until the NGINX Ingress controller pod is ready before proceeding.
+
+### 7.7 Apply the Ingress manifest
+
+Create the Ingress resource using the existing project manifest:
+
+```bash
+minikube kubectl -- apply -f deployment/kubernetes/ingress.yaml
+```
+
+Verify the resource:
+
+```bash
+minikube kubectl -- get ingress
+minikube kubectl -- describe ingress heart-disease-api-ingress
+```
+
+The Ingress routes requests for the host `heart-disease.local` to the `heart-disease-api` Service on port `8000`.
+
+### 7.8 Test the Ingress endpoint
+
+Find the Minikube IP:
+
+```bash
+minikube ip
+```
+
+For the current VM setup, the Minikube IP is `192.168.49.2`. If it differs in your environment, use the IP returned by the command.
+
+From the Linux VM, test the Ingress health endpoint:
+
+```bash
+curl -i --resolve heart-disease.local:80:192.168.49.2 \
+  http://heart-disease.local/health
+```
+
+Expected result: HTTP `200 OK` and a healthy API response.
+
+To test the prediction endpoint through Ingress, use:
+
+```bash
+curl -X POST \
+  http://heart-disease.local/predict \
+  -H "Host: heart-disease.local" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "age": 63,
+    "sex": 1,
+    "cp": 3,
+    "trestbps": 145,
+    "chol": 233,
+    "fbs": 1,
+    "restecg": 0,
+    "thalach": 150,
+    "exang": 0,
+    "oldpeak": 2.3,
+    "slope": 0,
+    "ca": 0,
+    "thal": 1
+  }'
+```
+
+The response should contain the predicted class, class probabilities, and the educational-use disclaimer.
+
+**Note:** The `--resolve` option maps the hostname to the specified IP for that individual `curl` request. It does not make the service publicly accessible. The Ingress endpoint has been verified from within the VM; public internet access has not been configured or verified.
+
+### 7.9 Useful Kubernetes diagnostic commands
+
+Use these commands if the application does not start or the endpoint fails:
+
+```bash
+minikube kubectl -- get all
+minikube kubectl -- get events --sort-by=.lastTimestamp
+minikube kubectl -- logs deployment/heart-disease-api
+minikube kubectl -- describe deployment heart-disease-api
+minikube kubectl -- get pods -n ingress-nginx
+minikube kubectl -- logs -n ingress-nginx deployment/ingress-nginx-controller
+```
+
+If the image was rebuilt, reload it into Minikube and restart the Deployment:
+
+```bash
+docker build -t heart-disease-api:1.0 .
+minikube image load heart-disease-api:1.0
+minikube kubectl -- rollout restart deployment/heart-disease-api
+minikube kubectl -- rollout status deployment/heart-disease-api
+```
+
+### 7.10 Evidence and screenshots
+
+Capture and include the following screenshots in the project report:
+
+1. Minikube node in `Ready` state.
+2. Kubernetes Deployment and pod in `Running` state.
+3. Kubernetes Service and Ingress resources.
+4. Successful Ingress `/health` response with HTTP `200 OK`.
+5. Successful `/predict` response through the Ingress endpoint.
+
+Keep the screenshots under the repository's `screenshots/` directory and update the image paths in this README to match the actual filenames.
+
+### 7.11 Stop the local cluster
+
+When Kubernetes testing is complete:
+
+```bash
+minikube stop
+```
+
+To delete the local Minikube cluster entirely:
+
+```bash
+minikube delete
+```
+
+Use `minikube stop` when you want to preserve the cluster for later demonstrations. The delete command removes the cluster and its local Kubernetes resources.
 
 ---
 

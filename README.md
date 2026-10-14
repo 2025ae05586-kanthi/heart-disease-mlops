@@ -690,7 +690,7 @@ minikube kubectl -- rollout status deployment/heart-disease-api
 
 ### 7.10 Evidence and screenshots
 
-Capture and include the following screenshots in the project report:
+Captured and included the following screenshots in the project report:
 
 1. Minikube node in `Ready` state.
 2. Kubernetes Deployment and pod in `Running` state.
@@ -698,7 +698,14 @@ Capture and include the following screenshots in the project report:
 4. Successful Ingress `/health` response with HTTP `200 OK`.
 5. Successful `/predict` response through the Ingress endpoint.
 
-Keep the screenshots under the repository's `screenshots/` directory and update the image paths in this README to match the actual filenames.
+Screenshots:
+
+- `screenshots/07_ingress_predict_success.png`
+
+
+#### Ingress Prediction Screenshot
+
+![Ingress Prediction Success](screenshots/07_ingress_predict_success.png)
 
 ### 7.11 Stop the local cluster
 

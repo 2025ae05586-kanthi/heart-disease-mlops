@@ -374,6 +374,10 @@ https://github.com/2025ae05586-kanthi/heart-disease-mlops/actions
 **Screenshot:** A GitHub Actions run summary showing the workflow and its steps completed successfully.
 - `screenshots/04_github_actions_ci.png`
 
+#### GitHub Actions Screenshot
+
+![Github Actions](screenshots/04_github_actions_ci.png)
+
 ### 5.2 Docker Build and API Verification
 
 The Docker image packages the FastAPI application and the serialized model artifact.

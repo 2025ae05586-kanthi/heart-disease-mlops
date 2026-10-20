@@ -729,12 +729,112 @@ Use `minikube stop` when you want to preserve the cluster for later demonstratio
 
 ---
 
-## Limitations and Responsible Use
+## 8. API Monitoring and Dashboard
 
-- This project is an educational MLOps demonstration using a small, historical dataset.
-- The model is not intended for medical diagnosis, screening, or treatment decisions.
-- The reported metrics reflect the recorded evaluation setup and may vary with data splits and environment changes.
-- The Kubernetes Ingress was verified inside the VM/Minikube environment; a public endpoint has not been verified.
-- Basic API logs and health checks are available, but a Prometheus/Grafana dashboard has not been verified.
+### Overview
 
-**Conclusion:** This project demonstrates an end-to-end machine-learning workflow covering data preparation, EDA, model comparison, MLflow experiment tracking, automated testing, Docker packaging, FastAPI serving, and Kubernetes deployment verification.
+The project includes a local API monitoring solution using FastAPI request logging and a Streamlit dashboard. It records incoming HTTP requests and displays operational metrics to help evaluate the behavior of the deployed prediction API.
+
+### Monitoring Architecture
+
+1. A client sends a request to the FastAPI service.
+2. FastAPI processes the request and returns an HTTP response.
+3. HTTP middleware records the request timestamp, method, endpoint, status code, response time, and success/failure indicator.
+4. Monitoring records are stored as JSON Lines in `monitoring/requests.jsonl`.
+5. A Streamlit dashboard reads the log file and presents the collected metrics and charts.
+
+**Architecture flow:**
+
+Client → FastAPI API → Request logging middleware → JSONL log file → Streamlit dashboard
+
+### Technologies Used
+
+- **FastAPI:** Serves the prediction API and captures HTTP request information.
+- **Docker:** Runs the API in a container.
+- **Python logging implementation:** Writes structured request records in JSON Lines format.
+- **Pandas:** Loads and processes monitoring records.
+- **Streamlit:** Provides an interactive monitoring dashboard.
+
+### Metrics Captured
+
+| Metric | Description |
+|---|---|
+| Total requests | Number of recorded HTTP requests |
+| Successful requests | Requests with HTTP status codes from 200 to 399 |
+| Failed requests | Requests with HTTP status codes outside that success range |
+| Success rate | Successful requests divided by total requests |
+| Average latency | Mean recorded request processing time in milliseconds |
+| Maximum latency | Highest recorded request processing time |
+| HTTP status distribution | Distribution of responses by HTTP status code |
+| Requests by endpoint | Request counts grouped by API endpoint |
+
+### Dashboard Features
+
+The Streamlit dashboard provides:
+
+- Summary metrics for request volume, success rate, failures, and latency.
+- HTTP status code distribution chart.
+- Request counts by endpoint.
+- API response-time chart over time.
+- Recent request history with timestamps, methods, endpoints, status codes, and latency.
+- Endpoint filters to inspect selected API routes.
+- CSV export of the displayed request history.
+- Manual refresh and an optional control to clear local monitoring logs.
+
+### Running the Dashboard Locally
+
+Activate the project's virtual environment and install dependencies:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+Start the Streamlit dashboard from the project root:
+
+```powershell
+python -m streamlit run dashboard.py
+```
+
+Open the local dashboard at:
+
+`http://localhost:8501`
+
+The dashboard reads monitoring records from:
+
+`monitoring/requests.jsonl`
+
+### API Verification
+
+Check the API health endpoint:
+
+```powershell
+Invoke-RestMethod http://localhost:8000/health
+```
+
+Test a prediction using the API documentation at:
+
+`http://localhost:8000/docs`
+
+Requests received by the API are recorded by the monitoring middleware, including HTTP validation errors and requests to unknown endpoints.
+
+### Monitoring Screenshots
+
+The following screenshots provide evidence of the local monitoring implementation:
+
+**Dashboard metrics and charts**
+
+![Monitoring dashboard metrics](screenshots/08_monitoring_dashboard_metrics.png)
+
+**Response-time chart and request logs**
+
+![Monitoring dashboard request logs](screenshots/09_monitoring_dashboard_logs.png)
+
+### Limitations and Scope
+
+- The dashboard uses manual refresh; it does not automatically refresh at a fixed interval.
+- The dashboard reads the local monitoring log file. It does not automatically collect metrics from the Kubernetes deployment on the VM.
+- The recorded request metrics describe API operations and latency; they are not model-accuracy metrics.
+- The log file is generated at runtime and is excluded from Git. Screenshots and source code are retained as project evidence.
+- This project is an educational machine-learning demonstration, not a medical diagnostic system.
+

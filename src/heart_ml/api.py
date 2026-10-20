@@ -1,13 +1,46 @@
 
+import json
+import os
+import time
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
+from pathlib import Path
+from threading import Lock
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.heart_ml.predict import load_model, predict_one
 
 
 model = None
+
+MONITORING_LOG_FILE = Path(
+    os.getenv("MONITORING_LOG_FILE", "monitoring/requests.jsonl")
+)
+MONITORING_LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+monitoring_lock = Lock()
+
+
+def write_request_log(
+    method: str,
+    path: str,
+    status_code: int,
+    duration_ms: float,
+) -> None:
+    """Append one request record to the shared JSONL log."""
+    record = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "method": method,
+        "path": path,
+        "status_code": status_code,
+        "duration_ms": round(duration_ms, 2),
+        "success": 200 <= status_code < 400,
+    }
+
+    with monitoring_lock:
+        with MONITORING_LOG_FILE.open("a", encoding="utf-8") as log_file:
+            log_file.write(json.dumps(record) + "\n")
 
 
 class HeartDiseaseInput(BaseModel):
@@ -56,6 +89,26 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+
+@app.middleware("http")
+async def monitor_requests(request: Request, call_next):
+    """Measure requests and persist their outcomes."""
+    start_time = time.perf_counter()
+    status_code = 500
+
+    try:
+        response = await call_next(request)
+        status_code = response.status_code
+        return response
+    finally:
+        duration_ms = (time.perf_counter() - start_time) * 1000
+        write_request_log(
+            method=request.method,
+            path=request.url.path,
+            status_code=status_code,
+            duration_ms=duration_ms,
+        )
 
 
 @app.get("/health")

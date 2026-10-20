@@ -31,3 +31,6 @@ data/processed/*
 build/
 dist/
 *.egg-info/
+
+# Runtime API monitoring logs
+monitoring/requests.jsonl
